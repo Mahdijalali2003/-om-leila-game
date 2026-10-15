@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>بازی کلمات فارسی | دبستان ام لیلا</title>
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;padding:20px;
+  font-family:Tahoma,Arial,sans-serif;
+  background:linear-gradient(135deg,#e0f2fe,#f3e8ff);
+  color:#243047;text-align:center
+}
+.game{
+  max-width:600px;margin:20px auto;background:white;
+  border-radius:24px;padding:25px;
+  box-shadow:0 8px 25px #64748b30
+}
+h1{font-size:25px;color:#6d28d9}
+.subtitle{color:#64748b;line-height:2}
+.progress{background:#e5e7eb;border-radius:20px;height:10px;overflow:hidden}
+#bar{height:100%;width:0;background:#8b5cf6;transition:.3s}
+#counter{margin:18px 0;color:#6d28d9;font-weight:bold}
+#word{font-size:29px;color:#111827;margin:25px 0}
+#question{font-size:17px}
+.answers{display:grid;gap:12px;margin-top:20px}
+button{
+  font-family:inherit;font-size:16px;cursor:pointer;
+  border:2px solid #ddd6fe;border-radius:14px;
+  padding:14px;background:#faf5ff;color:#312e81
+}
+button:hover{background:#ede9fe}
+button:disabled{cursor:default}
+button.correct{background:#dcfce7;border-color:#22c55e}
+button.wrong{background:#fee2e2;border-color:#ef4444}
+#feedback{min-height:35px;font-weight:bold;margin:18px 0}
+.primary{background:#7c3aed;color:white;border:0;width:100%}
+#result{display:none}
+</style>
+</head>
+<body>
+<div class="game">
+  <h1>🌟 گنجینهٔ واژه‌ها 🌟</h1>
+  <div class="subtitle">بازی آموزش معنی کلمات فارسی<br>دبستان ام لیلا</div>
+
+  <div id="play">
+    <div id="counter"></div>
+    <div class="progress"><div id="bar"></div></div>
+    <p>معنی درست این واژه را انتخاب کن:</p>
+    <div id="word"></div>
+    <div id="question">کدام گزینه درست است؟</div>
+    <div class="answers" id="answers"></div>
+    <div id="feedback" aria-live="polite"></div>
+    <button class="primary" id="next" style="display:none">سؤال بعدی ←</button>
+  </div>
+
+  <div id="result">
+    <h2>🎉 آفرین، بازی تمام شد!</h2>
+    <p id="score" style="font-size:25px"></p>
+    <p id="message"></p>
+    <button class="primary" id="restart">🔄 بازی دوباره</button>
+  </div>
+</div>
+
+<script>
+const data=[
+["اوایل","ابتدا"],
+["بیابند","پیدا کنند"],
+["پی در پی","پشت سر هم و پیوسته"],
+["پیشین","گذشته و قبلی"],
+["پیمودن","طی کردن و پشت سر گذاشتن"],
+["جامه","لباس"],
+["جنب و جوش","تلاش و فعالیت بسیار"],
+["دلنشین","جذاب و زیبا"],
+["سپری شد","به پایان رسید"],
+["شگفتی","تعجب و حیرت"],
+["عهده","مسئولیت و وظیفه"],
+["کمیاب","چیزی که به‌راحتی در دسترس نیست"],
+["کوچ","مهاجرت و از جایی به جای دیگر رفتن"],
+["لطیف","ملایم و نرم"],
+["معتدل","نه گرم و نه سرد"],
+["می‌ربایند","می‌دزدند"],
+["ناچار","مجبور و ناگزیر"],
+["نهاده است","قرار داده است"],
+["نیرومند","قوی و دارای قدرت"]
+];
+
+let questions=[],index=0,score=0,answered=false;
+const $=id=>document.getElementById(id);
+
+function shuffle(arr){
+  for(let i=arr.length-1;i>0;i--){
+    let j=Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]]=[arr[j],arr[i]];
+  }
+  return arr;
+}
+
+function start(){
+  questions=shuffle([...data]);
+  index=0;score=0;
+  $("play").style.display="block";
+  $("result").style.display="none";
+  showQuestion();
+}
+
+function showQuestion(){
+  answered=false;
+  $("feedback").textContent="";
+  $("next").style.display="none";
+  $("counter").textContent=`سؤال ${index+1} از ${questions.length} | امتیاز: ${score}`;
+  $("bar").style.width=`${index/questions.length*100}%`;
+  const item=questions[index];
+  $("word").textContent=item[0];
+
+  let wrong=shuffle(data.filter(x=>x[0]!==item[0])).slice(0,3);
+  let choices=shuffle([item,...wrong]);
+  $("answers").innerHTML="";
+  choices.forEach(choice=>{
+    const btn=document.createElement("button");
+    btn.textContent=choice[1];
+    btn.addEventListener("click",()=>{
+      if(answered)return;
+      answered=true;
+      document.querySelectorAll("#answers button").forEach(b=>{
+        b.disabled=true;
+        if(b.textContent===item[1])b.classList.add("correct");
+      });
+      if(choice[0]===item[0]){
+        score++;
+        $("feedback").textContent="آفرین! پاسخ درست است 🌟";
+        $("feedback").style.color="#15803d";
+      }else{
+        btn.classList.add("wrong");
+        $("feedback").textContent="این بار اشتباه شد! معنی درست سبز شده است.";
+        $("feedback").style.color="#b91c1c";
+      }
+      $("counter").textContent=`سؤال ${index+1} از ${questions.length} | امتیاز: ${score}`;
+      $("next").textContent=index===questions.length-1?"دیدن نتیجه 🏆":"سؤال بعدی ←";
+      $("next").style.display="block";
+    });
+    $("answers").appendChild(btn);
+  });
+}
+
+$("next").addEventListener("click",()=>{
+  index++;
+  if(index<questions.length){
+    showQuestion();
+  }else{
+    $("play").style.display="none";
+    $("result").style.display="block";
+    $("bar").style.width="100%";
+    $("score").textContent=`${score} از ${questions.length} پاسخ درست`;
+    $("message").textContent=score===19?"فوق‌العاده بود! به همهٔ سؤال‌ها درست پاسخ دادی! 🏆":score>=14?"آفرین! عملکرد خیلی خوبی داشتی! 🌟":score>=10?"خوب بود! با تمرین بیشتر بهتر می‌شوی. 💪":"تلاش کن و دوباره بازی کن؛ این بار بهتر می‌شوی! 🌱";
+  }
+});
+$("restart").addEventListener("click",start);
+start();
+</script>
+</body>
+</html>
